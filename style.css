@@ -72,6 +72,7 @@ body.editing #map .country { cursor: pointer; }
   justify-content: center;
   box-shadow: var(--shadow);
 }
+a.btn { text-decoration: none; color: var(--text); }
 .btn.round svg {
   width: 20px;
   height: 20px;

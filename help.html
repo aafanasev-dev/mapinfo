@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>World Map Help</title>
+  <meta name="description" content="How to use the World Map: color countries by value and share the map as a link. Includes the exact URL format for building map links programmatically (for scripts and LLMs).">
+  <style>
+    :root {
+      --bg: #eef3f8; --panel: #ffffff; --text: #1f2933; --muted: #66727f;
+      --accent: #2563eb; --line: #dde3ea; --code: #f3f5f8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font: 15px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    main {
+      max-width: 820px; margin: 24px auto; padding: 24px 28px;
+      background: var(--panel); border-radius: 12px;
+      box-shadow: 0 4px 18px rgba(15, 23, 42, .1);
+    }
+    @media (max-width: 860px) { main { margin: 0; border-radius: 0; padding: 20px 16px; } }
+    h1 { margin: 0 0 4px; font-size: 26px; }
+    h2 { margin: 32px 0 8px; font-size: 20px; border-bottom: 1px solid var(--line); padding-bottom: 4px; }
+    h3 { margin: 20px 0 6px; font-size: 16px; }
+    a { color: var(--accent); }
+    .lead { color: var(--muted); margin-top: 0; }
+    code, pre { font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--code); border-radius: 4px; }
+    code { padding: 1px 4px; }
+    pre { padding: 10px 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
+    table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 14px; }
+    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { background: var(--code); }
+    .keys { columns: 3 220px; column-gap: 24px; font-size: 13px; padding: 0; list-style: none; }
+    .keys li { break-inside: avoid; padding: 1px 0; }
+    .keys code { display: inline-block; min-width: 5.5em; }
+    .open { display: inline-block; margin-top: 8px; padding: 8px 14px; background: var(--accent); color: #fff; border-radius: 6px; text-decoration: none; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>World Map — Help</h1>
+  <p class="lead">Color the countries of the world by a number and share the result as a link.</p>
+  <p><a class="open" href="/">Open the map</a></p>
+
+  <h2 id="what">What it is</h2>
+  <p>You enter a number for each country. Countries are colored on a gradient from the <em>low</em> color (smallest value) to the <em>high</em> color (largest value). Countries without a value get the <em>no-data</em> color.</p>
+  <p>The whole map is stored in the page link: the data, the units, the colors and the zoomed view. Nothing is saved on a server. <strong>Sharing the link shares the map exactly as you see it.</strong> Anyone who opens it can edit their own copy without affecting yours.</p>
+
+  <h2 id="using">Using the map</h2>
+  <h3>Buttons (top-left)</h3>
+  <ul>
+    <li><strong>Share</strong> (three connected dots): copies the current map link to the clipboard.</li>
+    <li><strong>Edit</strong> (pencil): opens the edit panel. While editing, the icon is a check mark; click it again to finish.</li>
+    <li><strong>Help</strong> (question mark): opens this page.</li>
+  </ul>
+  <h3>Entering values</h3>
+  <ol>
+    <li>Click <strong>Edit</strong>.</li>
+    <li>Click a country on the map.</li>
+    <li>Type a number and press <strong>Save</strong> (or Enter). <strong>Remove</strong> clears the country's value. Escape closes the box.</li>
+  </ol>
+  <p>Either <code>.</code> or <code>,</code> works as the decimal separator when you type, and negative numbers are allowed.</p>
+  <h3>Edit panel</h3>
+  <ul>
+    <li><strong>Units</strong>: text shown after every number, e.g. <code>%</code>, <code>$</code>, <code>people</code> (up to 20 characters).</li>
+    <li><strong>Low / High / No data</strong>: the three colors. <strong>Reset colors</strong> restores the defaults (soft red → soft green, light grey).</li>
+    <li><strong>Clear all data</strong>: removes every value.</li>
+  </ul>
+  <h3>Moving around</h3>
+  <ul>
+    <li>Zoom with the mouse wheel, a pinch, the <strong>+</strong> / <strong>−</strong> buttons (bottom-right) or the <kbd>+</kbd> / <kbd>-</kbd> keys. <strong>⟲</strong> or <kbd>0</kbd> returns to the whole world.</li>
+    <li>Drag to pan. The zoomed view is part of the link too.</li>
+    <li>Hover a country to see its name and value.</li>
+  </ul>
+  <h3>Numbers on the map and the bottom strip</h3>
+  <p>Each value is written inside its country. When you zoom or pan, the number moves into the part of the country that is still on screen. When a number does not fit inside its country (small countries, or a zoomed-out view), it is listed instead in the <strong>strip at the bottom</strong>: a color square, the country name and the value, largest first. Zoom in and the number moves back onto the map.</p>
+  <p>The <strong>legend</strong> (bottom-left) shows the gradient with the minimum and maximum values.</p>
+
+  <h2 id="link-format">Building a map link (for scripts and LLMs)</h2>
+  <p>A map is fully described by the part of the URL after <code>#</code>. To create a map, build a link of this form and open it (or give it to a person):</p>
+  <pre>https://&lt;this-site&gt;/#d=&lt;key&gt;:&lt;value&gt;,&lt;key&gt;:&lt;value&gt;&amp;u=&lt;units&gt;&amp;a=&lt;hex&gt;&amp;b=&lt;hex&gt;&amp;n=&lt;hex&gt;&amp;v=&lt;zoom&gt;,&lt;lon&gt;,&lt;lat&gt;</pre>
+  <p>Replace <code>&lt;this-site&gt;</code> with the host this help page is served from. Parameters are joined with <code>&amp;</code>, in any order. Every parameter is optional. Leave one out to use its default.</p>
+
+  <table>
+    <thead><tr><th>Param</th><th>Meaning</th><th>Format</th><th>Default</th></tr></thead>
+    <tbody>
+      <tr><td><code>d</code></td><td>Data: one value per country</td><td>Comma-separated <code>key:value</code> pairs. <code>key</code> is a country key (see below). <code>value</code> is a plain number with <code>.</code> as the decimal separator, no thousands separators, may be negative or use exponent notation (<code>1.5e9</code>).</td><td>no data</td></tr>
+      <tr><td><code>u</code></td><td>Units shown after each number</td><td>URI-encoded text, max 20 characters (e.g. <code>%25</code> for <code>%</code>, <code>people</code>, <code>%E2%82%AC</code> for <code>€</code>)</td><td>none</td></tr>
+      <tr><td><code>a</code></td><td>Color of the lowest value</td><td>6 hex digits, no <code>#</code></td><td><code>e57373</code> (soft red)</td></tr>
+      <tr><td><code>b</code></td><td>Color of the highest value</td><td>6 hex digits, no <code>#</code></td><td><code>81c784</code> (soft green)</td></tr>
+      <tr><td><code>n</code></td><td>Color of countries without data</td><td>6 hex digits, no <code>#</code></td><td><code>d3d3d3</code> (light grey)</td></tr>
+      <tr><td><code>v</code></td><td>Zoomed view</td><td><code>zoom,lon,lat</code>. <code>zoom</code> is greater than 1 and at most 20. <code>lon</code>/<code>lat</code> (degrees) is the point shown at the screen center.</td><td>whole world</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Rules</h3>
+  <ul>
+    <li><strong>Country keys are ISO 3166-1 numeric codes without leading zeros</strong>: Albania is <code>8</code> (not <code>008</code>), Germany is <code>276</code>, the USA is <code>840</code>.</li>
+    <li>Three territories have no ISO code and use a lowercase name instead: <code>ncyprus</code> (Northern Cyprus), <code>somaliland</code>, <code>kosovo</code>.</li>
+    <li><strong>Only the 176 countries listed below exist on the map.</strong> Very small countries (e.g. Singapore, Malta, Monaco, Bahrain, most island nations) are not drawn. Their keys are ignored. Antarctica is not shown.</li>
+    <li>The gradient is linear between the minimum and maximum of the values in <code>d</code>. If all values are equal, every country gets the middle color.</li>
+    <li>Pairs with a non-numeric value, colors that are not 6 hex digits and out-of-range views are ignored, as are unknown parameters. The map never fails to load because of a bad parameter.</li>
+    <li>If a key appears twice in <code>d</code>, the last one wins.</li>
+  </ul>
+
+  <h3>Examples</h3>
+  <p><strong>Population in millions</strong> for five countries, default colors:</p>
+  <pre>/#u=M&amp;d=156:1411,356:1428,840:335,76:216,276:84</pre>
+  <p>Renders China, India, USA, Brazil and Germany. Germany (84) is the reddest, India (1428) the greenest. Every other country is grey, and the numbers show as e.g. <code>1,428 M</code>. At the whole-world view Germany is too small for its number, so it is listed in the bottom strip.</p>
+
+  <p><strong>Percentages with custom colors</strong> (white → dark blue):</p>
+  <pre>/#u=%25&amp;a=ffffff&amp;b=08306b&amp;d=250:72.5,724:68.1,380:63.9,826:75.4,56:70.2,442:81</pre>
+  <p>France, Spain, Italy, UK, Belgium and Luxembourg, with units <code>%</code>. At the whole-world view these countries are too small for labels like <code>72.5 %</code>, so all six are listed in the bottom strip.</p>
+
+  <p><strong>Same map, zoomed into Western Europe</strong>:</p>
+  <pre>/#u=%25&amp;a=ffffff&amp;b=08306b&amp;d=250:72.5,724:68.1,380:63.9,826:75.4,56:70.2,442:81&amp;v=5,5,47</pre>
+  <p>Zoom 5, centered on 5° E, 47° N. Five numbers are now drawn on the map. Luxembourg is too small to hold its number at any reasonable zoom, so it stays in the bottom strip. Exactly what fits depends on the window size.</p>
+
+  <h2 id="keys">Country keys</h2>
+  <p>Every country on the map, as <code>key</code> name. Names are as the map labels them.</p>
+  <ul class="keys">
+    <li><code>4</code> Afghanistan</li>
+    <li><code>8</code> Albania</li>
+    <li><code>12</code> Algeria</li>
+    <li><code>24</code> Angola</li>
+    <li><code>32</code> Argentina</li>
+    <li><code>51</code> Armenia</li>
+    <li><code>36</code> Australia</li>
+    <li><code>40</code> Austria</li>
+    <li><code>31</code> Azerbaijan</li>
+    <li><code>44</code> Bahamas</li>
+    <li><code>50</code> Bangladesh</li>
+    <li><code>112</code> Belarus</li>
+    <li><code>56</code> Belgium</li>
+    <li><code>84</code> Belize</li>
+    <li><code>204</code> Benin</li>
+    <li><code>64</code> Bhutan</li>
+    <li><code>68</code> Bolivia</li>
+    <li><code>70</code> Bosnia and Herz.</li>
+    <li><code>72</code> Botswana</li>
+    <li><code>76</code> Brazil</li>
+    <li><code>96</code> Brunei</li>
+    <li><code>100</code> Bulgaria</li>
+    <li><code>854</code> Burkina Faso</li>
+    <li><code>108</code> Burundi</li>
+    <li><code>116</code> Cambodia</li>
+    <li><code>120</code> Cameroon</li>
+    <li><code>124</code> Canada</li>
+    <li><code>140</code> Central African Rep.</li>
+    <li><code>148</code> Chad</li>
+    <li><code>152</code> Chile</li>
+    <li><code>156</code> China</li>
+    <li><code>170</code> Colombia</li>
+    <li><code>178</code> Congo</li>
+    <li><code>188</code> Costa Rica</li>
+    <li><code>384</code> Côte d'Ivoire</li>
+    <li><code>191</code> Croatia</li>
+    <li><code>192</code> Cuba</li>
+    <li><code>196</code> Cyprus</li>
+    <li><code>203</code> Czechia</li>
+    <li><code>180</code> Dem. Rep. Congo</li>
+    <li><code>208</code> Denmark</li>
+    <li><code>262</code> Djibouti</li>
+    <li><code>214</code> Dominican Rep.</li>
+    <li><code>218</code> Ecuador</li>
+    <li><code>818</code> Egypt</li>
+    <li><code>222</code> El Salvador</li>
+    <li><code>226</code> Eq. Guinea</li>
+    <li><code>232</code> Eritrea</li>
+    <li><code>233</code> Estonia</li>
+    <li><code>748</code> eSwatini</li>
+    <li><code>231</code> Ethiopia</li>
+    <li><code>238</code> Falkland Is.</li>
+    <li><code>242</code> Fiji</li>
+    <li><code>246</code> Finland</li>
+    <li><code>260</code> Fr. S. Antarctic Lands</li>
+    <li><code>250</code> France</li>
+    <li><code>266</code> Gabon</li>
+    <li><code>270</code> Gambia</li>
+    <li><code>268</code> Georgia</li>
+    <li><code>276</code> Germany</li>
+    <li><code>288</code> Ghana</li>
+    <li><code>300</code> Greece</li>
+    <li><code>304</code> Greenland</li>
+    <li><code>320</code> Guatemala</li>
+    <li><code>324</code> Guinea</li>
+    <li><code>624</code> Guinea-Bissau</li>
+    <li><code>328</code> Guyana</li>
+    <li><code>332</code> Haiti</li>
+    <li><code>340</code> Honduras</li>
+    <li><code>348</code> Hungary</li>
+    <li><code>352</code> Iceland</li>
+    <li><code>356</code> India</li>
+    <li><code>360</code> Indonesia</li>
+    <li><code>364</code> Iran</li>
+    <li><code>368</code> Iraq</li>
+    <li><code>372</code> Ireland</li>
+    <li><code>376</code> Israel</li>
+    <li><code>380</code> Italy</li>
+    <li><code>388</code> Jamaica</li>
+    <li><code>392</code> Japan</li>
+    <li><code>400</code> Jordan</li>
+    <li><code>398</code> Kazakhstan</li>
+    <li><code>404</code> Kenya</li>
+    <li><code>kosovo</code> Kosovo</li>
+    <li><code>414</code> Kuwait</li>
+    <li><code>417</code> Kyrgyzstan</li>
+    <li><code>418</code> Laos</li>
+    <li><code>428</code> Latvia</li>
+    <li><code>422</code> Lebanon</li>
+    <li><code>426</code> Lesotho</li>
+    <li><code>430</code> Liberia</li>
+    <li><code>434</code> Libya</li>
+    <li><code>440</code> Lithuania</li>
+    <li><code>442</code> Luxembourg</li>
+    <li><code>807</code> Macedonia</li>
+    <li><code>450</code> Madagascar</li>
+    <li><code>454</code> Malawi</li>
+    <li><code>458</code> Malaysia</li>
+    <li><code>466</code> Mali</li>
+    <li><code>478</code> Mauritania</li>
+    <li><code>484</code> Mexico</li>
+    <li><code>498</code> Moldova</li>
+    <li><code>496</code> Mongolia</li>
+    <li><code>499</code> Montenegro</li>
+    <li><code>504</code> Morocco</li>
+    <li><code>508</code> Mozambique</li>
+    <li><code>104</code> Myanmar</li>
+    <li><code>ncyprus</code> N. Cyprus</li>
+    <li><code>516</code> Namibia</li>
+    <li><code>524</code> Nepal</li>
+    <li><code>528</code> Netherlands</li>
+    <li><code>540</code> New Caledonia</li>
+    <li><code>554</code> New Zealand</li>
+    <li><code>558</code> Nicaragua</li>
+    <li><code>562</code> Niger</li>
+    <li><code>566</code> Nigeria</li>
+    <li><code>408</code> North Korea</li>
+    <li><code>578</code> Norway</li>
+    <li><code>512</code> Oman</li>
+    <li><code>586</code> Pakistan</li>
+    <li><code>275</code> Palestine</li>
+    <li><code>591</code> Panama</li>
+    <li><code>598</code> Papua New Guinea</li>
+    <li><code>600</code> Paraguay</li>
+    <li><code>604</code> Peru</li>
+    <li><code>608</code> Philippines</li>
+    <li><code>616</code> Poland</li>
+    <li><code>620</code> Portugal</li>
+    <li><code>630</code> Puerto Rico</li>
+    <li><code>634</code> Qatar</li>
+    <li><code>642</code> Romania</li>
+    <li><code>643</code> Russia</li>
+    <li><code>646</code> Rwanda</li>
+    <li><code>728</code> S. Sudan</li>
+    <li><code>682</code> Saudi Arabia</li>
+    <li><code>686</code> Senegal</li>
+    <li><code>688</code> Serbia</li>
+    <li><code>694</code> Sierra Leone</li>
+    <li><code>703</code> Slovakia</li>
+    <li><code>705</code> Slovenia</li>
+    <li><code>90</code> Solomon Is.</li>
+    <li><code>706</code> Somalia</li>
+    <li><code>somaliland</code> Somaliland</li>
+    <li><code>710</code> South Africa</li>
+    <li><code>410</code> South Korea</li>
+    <li><code>724</code> Spain</li>
+    <li><code>144</code> Sri Lanka</li>
+    <li><code>729</code> Sudan</li>
+    <li><code>740</code> Suriname</li>
+    <li><code>752</code> Sweden</li>
+    <li><code>756</code> Switzerland</li>
+    <li><code>760</code> Syria</li>
+    <li><code>158</code> Taiwan</li>
+    <li><code>762</code> Tajikistan</li>
+    <li><code>834</code> Tanzania</li>
+    <li><code>764</code> Thailand</li>
+    <li><code>626</code> Timor-Leste</li>
+    <li><code>768</code> Togo</li>
+    <li><code>780</code> Trinidad and Tobago</li>
+    <li><code>788</code> Tunisia</li>
+    <li><code>792</code> Turkey</li>
+    <li><code>795</code> Turkmenistan</li>
+    <li><code>800</code> Uganda</li>
+    <li><code>804</code> Ukraine</li>
+    <li><code>784</code> United Arab Emirates</li>
+    <li><code>826</code> United Kingdom</li>
+    <li><code>840</code> United States of America</li>
+    <li><code>858</code> Uruguay</li>
+    <li><code>860</code> Uzbekistan</li>
+    <li><code>548</code> Vanuatu</li>
+    <li><code>862</code> Venezuela</li>
+    <li><code>704</code> Vietnam</li>
+    <li><code>732</code> W. Sahara</li>
+    <li><code>887</code> Yemen</li>
+    <li><code>894</code> Zambia</li>
+    <li><code>716</code> Zimbabwe</li>
+  </ul>
+</main>
+</body>
+</html>

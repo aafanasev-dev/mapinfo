@@ -20,6 +20,7 @@ A frontend-only world choropleth map: users enter a number per country, countrie
 - `index.html` loads `vendor/d3.min.js`, `vendor/topojson-client.min.js` as classic scripts (globals `d3`, `topojson`), then `app.js` (an IIFE, not an ES module).
 - `vendor/` does **not exist in the repo**: the Dockerfile's `fetch` stage downloads pinned d3@7.9.0, topojson-client@3.1.0 and world-atlas@2.0.2 `countries-110m.json` from jsdelivr. To run the page outside Docker you must fetch these into `vendor/` yourself.
 - `.dockerignore` is an allowlist (`*` then `!file`) — a new served file must be added there and to the Dockerfile `COPY` line.
+- `help.html` is the user/LLM help page, served at `/help` by an exact-match nginx `location` and linked from the round "?" button and `<link rel="help">`. It documents the URL hash format, the defaults and the full list of country keys. **Any change to the hash format, defaults, UI controls or the atlas must be mirrored there**, because LLMs build links from it. The country list was generated from the atlas (`keyOf()` order: ISO numeric, else name slug).
 - nginx serves static files only; missing paths return 404 (no SPA fallback needed since state is in the hash).
 
 ### app.js data flow
