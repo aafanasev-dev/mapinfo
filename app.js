@@ -5,7 +5,10 @@
   const DEFAULTS = { u: '', a: 'ffffcc', b: 'bd0026', n: 'd3d3d3' };
   const HEX = /^[0-9a-f]{6}$/i;
 
-  const state = { ...DEFAULTS, data: new Map() }; // data: key -> number
+  const MAX_ZOOM = 20;
+
+  // data: key -> number; view: null (whole world) | { k, lon, lat } (zoom + geographic center)
+  const state = { ...DEFAULTS, data: new Map(), view: null };
 
   function parseHash() {
     const params = new URLSearchParams(location.hash.slice(1));
@@ -25,6 +28,15 @@
         if (Number.isFinite(val)) state.data.set(key, val);
       }
     }
+    state.view = parseView(params.get('v'));
+  }
+
+  function parseView(v) {
+    if (!v) return null;
+    const [k, lon, lat] = v.split(',').map(Number);
+    if (![k, lon, lat].every(Number.isFinite)) return null;
+    if (Math.abs(lon) > 360 || Math.abs(lat) > 90 || k <= 1) return null;
+    return { k: Math.min(k, MAX_ZOOM), lon, lat };
   }
 
   function buildHash() {
@@ -36,6 +48,10 @@
     if (state.data.size) {
       const d = [...state.data].map(([k, v]) => k + ':' + v).join(',');
       parts.push('d=' + d);
+    }
+    if (state.view) {
+      const { k, lon, lat } = state.view;
+      parts.push('v=' + [+k.toFixed(2), +lon.toFixed(2), +lat.toFixed(2)].join(','));
     }
     return parts.join('&');
   }
@@ -74,14 +90,57 @@
     ? String(parseInt(f.id, 10))
     : f.properties.name.toLowerCase().replace(/[^a-z]/g, '');
 
+  let applyingView = false; // true while code (not the user) sets the zoom transform
+
   const zoom = d3.zoom()
-    .scaleExtent([1, 12])
+    .scaleExtent([1, MAX_ZOOM])
     .on('zoom', ev => {
       transform = ev.transform;
       root.attr('transform', transform);
       updateLabels();
+    })
+    .on('end', ev => {
+      if (applyingView) return;
+      const view = transformToView(ev.transform);
+      if (view === undefined) return;
+      state.view = view;
+      saveHash();
     });
   svg.call(zoom).on('dblclick.zoom', null);
+
+  // Zoom state <-> URL view. The view stores the geographic point at the screen
+  // center, so a shared link shows the same area on any window size.
+  function viewToTransform(view) {
+    if (!view) return d3.zoomIdentity;
+    const [x, y] = projection([view.lon, view.lat]);
+    const w = window.innerWidth, h = window.innerHeight;
+    const t = d3.zoomIdentity.translate(w / 2 - view.k * x, h / 2 - view.k * y).scale(view.k);
+    const ext = [[0, 0], [w, h]];
+    return zoom.constrain()(t, ext, ext);
+  }
+
+  // Returns null for the default view, undefined if the center can't be inverted.
+  function transformToView(t) {
+    if (t.k < 1.01) return null;
+    const w = window.innerWidth, h = window.innerHeight;
+    const ll = projection.invert([(w / 2 - t.x) / t.k, (h / 2 - t.y) / t.k]);
+    if (!ll || !ll.every(Number.isFinite)) return undefined;
+    return { k: t.k, lon: ll[0], lat: ll[1] };
+  }
+
+  function applyView() {
+    applyingView = true;
+    svg.call(zoom.transform, viewToTransform(state.view));
+    applyingView = false;
+  }
+
+  function zoomBy(factor) {
+    svg.transition().duration(250).call(zoom.scaleBy, factor);
+  }
+
+  function resetView() {
+    svg.transition().duration(250).call(zoom.transform, d3.zoomIdentity);
+  }
 
   // Largest polygon of a (multi)polygon feature: used for label placement.
   function mainPart(f) {
@@ -110,6 +169,7 @@
     }
     zoom.extent([[0, 0], [w, h]]).translateExtent([[0, 0], [w, h]]);
     render();
+    applyView();
   }
 
   // ---------- Rendering ----------
@@ -312,8 +372,16 @@
   popupInput.addEventListener('input', () => popupInput.classList.remove('invalid'));
 
   document.addEventListener('keydown', ev => {
-    if (ev.key === 'Escape') closePopup();
+    if (ev.key === 'Escape') return closePopup();
+    if (ev.target.closest('input, textarea') || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+    if (ev.key === '+' || ev.key === '=') zoomBy(1.5);
+    else if (ev.key === '-' || ev.key === '_') zoomBy(1 / 1.5);
+    else if (ev.key === '0') resetView();
   });
+
+  document.getElementById('zoom-in').addEventListener('click', () => zoomBy(1.5));
+  document.getElementById('zoom-out').addEventListener('click', () => zoomBy(1 / 1.5));
+  document.getElementById('zoom-reset').addEventListener('click', resetView);
 
   // Click on empty map area closes the popup.
   svg.on('click', ev => {
@@ -357,5 +425,6 @@
     parseHash();
     if (editing) syncPanel();
     render();
+    if (features.length) applyView();
   });
 })();

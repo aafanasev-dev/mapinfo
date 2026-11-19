@@ -30,8 +30,8 @@ A frontend-only world choropleth map: users enter a number per country, countrie
 - `layout()` recomputes projection/paths/label anchors on resize; `render()` recolors countries, updates labels and legend; `updateLabels()` rescales/hides labels on zoom (hidden when the country's largest polygon is narrower than the text).
 
 URL hash format (keep backward compatible — shared links depend on it):
-`#u=<uri-encoded units>&a=ffffcc&b=bd0026&n=d3d3d3&d=840:331.9,276:83.2`
-Params equal to `DEFAULTS` are omitted. Country keys are ISO 3166-1 numeric ids without leading zeros; the three world-atlas features without an id (N. Cyprus, Somaliland, Kosovo) use a lowercase letters-only slug of their name (`keyOf()`). Antarctica is filtered out.
+`#u=<uri-encoded units>&a=ffffcc&b=bd0026&n=d3d3d3&d=840:331.9,276:83.2&v=3.2,10.45,51.17`
+Params equal to `DEFAULTS` are omitted. `v=<zoom>,<lon>,<lat>` is the zoom level and the geographic point at the screen center (omitted at the default whole-world view); it's converted to/from the d3.zoom transform via `projection`/`projection.invert` (`viewToTransform`/`transformToView`) so it's independent of window size. It's written on zoom `end`; `applyingView` suppresses writes when code applies a view (on layout/resize and `hashchange`). Country keys are ISO 3166-1 numeric ids without leading zeros; the three world-atlas features without an id (N. Cyprus, Somaliland, Kosovo) use a lowercase letters-only slug of their name (`keyOf()`). Antarctica is filtered out.
 
 ## Testing
 
