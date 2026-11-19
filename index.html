@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>World Map</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <svg id="map" aria-label="World map"></svg>
+
+  <button id="edit-btn" class="btn primary">Edit</button>
+
+  <aside id="panel" hidden>
+    <h2>Edit map</h2>
+    <p class="hint">Click a country to enter a value.</p>
+
+    <label>Units
+      <input id="units" type="text" list="unit-presets" placeholder="e.g. %, $, people" maxlength="20">
+      <datalist id="unit-presets">
+        <option value="%"><option value="$"><option value="€"><option value="people">
+        <option value="km²"><option value="t"><option value="°C">
+      </datalist>
+    </label>
+
+    <div class="colors">
+      <label>Low<input id="color-a" type="color"></label>
+      <label>High<input id="color-b" type="color"></label>
+      <label>No data<input id="color-n" type="color"></label>
+    </div>
+    <div id="panel-gradient" class="gradient-bar"></div>
+
+    <div class="row">
+      <button id="copy-btn" class="btn">Copy link</button>
+      <button id="clear-btn" class="btn danger">Clear all data</button>
+    </div>
+    <button id="reset-colors-btn" class="btn link">Reset colors</button>
+  </aside>
+
+  <div id="popup" hidden>
+    <div id="popup-name"></div>
+    <form id="popup-form">
+      <input id="popup-input" type="text" inputmode="decimal" autocomplete="off" placeholder="No data">
+      <span id="popup-unit"></span>
+      <div class="row">
+        <button type="submit" class="btn primary">Save</button>
+        <button type="button" id="popup-remove" class="btn">Remove</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="tooltip" hidden></div>
+
+  <div id="legend" hidden>
+    <div class="gradient-bar" id="legend-bar"></div>
+    <div class="legend-scale"><span id="legend-min"></span><span id="legend-max"></span></div>
+    <div class="legend-nodata"><i id="legend-nodata-swatch"></i>No data</div>
+  </div>
+
+  <div id="toast" hidden></div>
+
+  <script src="vendor/d3.min.js"></script>
+  <script src="vendor/topojson-client.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
