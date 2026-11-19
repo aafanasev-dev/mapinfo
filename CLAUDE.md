@@ -27,7 +27,8 @@ A frontend-only world choropleth map: users enter a number per country, countrie
 `state` (`u` units, `a`/`b` gradient hex colors, `n` no-data color, `data: Map<key, number>`) is the single source of truth.
 - `parseHash()` ← `location.hash` on load and on `hashchange`.
 - Every UI change mutates `state` → `saveHash()` (`history.replaceState`, so no `hashchange` fires) → `render()`.
-- `layout()` recomputes projection/paths/label anchors on resize; `render()` recolors countries, updates labels and legend; `updateLabels()` rescales/hides labels on zoom (hidden when the country's largest polygon is narrower than the text).
+- `layout()` recomputes projection/paths on resize; `render()` recolors countries, updates labels and legend; `updateLabels()` runs on every zoom frame. It works in screen space: labels sit in a `<g>` outside the zoomed `root`, and `screenProj` is the projection combined with the zoom transform and clipped to the viewport. Each label goes at the centroid of its country's largest *visible* polygon. A label that doesn't fit that polygon's bounds is hidden and its country is listed in the bottom `#overflow` strip, which shows a swatch, the name and the value. Off-screen countries appear in neither. The strip's height is exposed as the CSS var `--strip-h` so the legend and zoom controls sit above it.
+- Default colors are soft red → soft green (`e57373` → `81c784`). They changed from `ffffcc` → `bd0026` in Nov 2026, so links made before that which omitted `a`/`b` now render with the new defaults.
 
 URL hash format (keep backward compatible — shared links depend on it):
 `#u=<uri-encoded units>&a=ffffcc&b=bd0026&n=d3d3d3&d=840:331.9,276:83.2&v=3.2,10.45,51.17`

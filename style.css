@@ -53,12 +53,42 @@ body.editing #map .country { cursor: pointer; }
 .btn.danger { color: var(--danger); }
 .btn.link { border: none; background: none; color: var(--muted); padding: 4px 0; text-decoration: underline; }
 
-#edit-btn { position: fixed; top: 16px; right: 16px; box-shadow: var(--shadow); z-index: 10; min-width: 70px; }
+#actions {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.btn.round {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow);
+}
+.btn.round svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+#edit-btn .icon-done { display: none; }
+body.editing #edit-btn .icon-edit { display: none; }
+body.editing #edit-btn .icon-done { display: block; }
 
 #panel {
   position: fixed;
-  top: 60px;
-  right: 16px;
+  top: 16px;
+  left: 76px;
   width: 260px;
   max-width: calc(100vw - 32px);
   padding: 16px;
@@ -99,7 +129,7 @@ body.editing #map .country { cursor: pointer; }
 #zoom-controls {
   position: fixed;
   right: 16px;
-  bottom: 16px;
+  bottom: calc(16px + var(--strip-h, 0px));
   z-index: 10;
   display: flex;
   flex-direction: column;
@@ -135,7 +165,7 @@ body.editing #map .country { cursor: pointer; }
 #legend {
   position: fixed;
   left: 16px;
-  bottom: 16px;
+  bottom: calc(16px + var(--strip-h, 0px));
   width: 220px;
   padding: 10px 12px;
   background: rgba(255, 255, 255, .92);
@@ -146,6 +176,38 @@ body.editing #map .country { cursor: pointer; }
 .legend-scale { display: flex; justify-content: space-between; margin-top: 4px; }
 .legend-nodata { display: flex; align-items: center; gap: 6px; margin-top: 6px; color: var(--muted); }
 .legend-nodata i { width: 16px; height: 10px; border-radius: 2px; display: inline-block; }
+
+#overflow {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9;
+  max-height: 30vh;
+  overflow-y: auto;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, .92);
+  box-shadow: 0 -2px 12px rgba(15, 23, 42, .12);
+}
+#overflow-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 12px;
+}
+#overflow-list li { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+#overflow-list i {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .15);
+  flex: none;
+}
+#overflow-list .name { color: var(--muted); }
+#overflow-list b { font-weight: 600; }
 
 #toast {
   position: fixed;

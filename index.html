@@ -9,7 +9,15 @@
 <body>
   <svg id="map" aria-label="World map"></svg>
 
-  <button id="edit-btn" class="btn primary">Edit</button>
+  <div id="actions">
+    <button id="share-btn" class="btn round" title="Copy link" aria-label="Copy link">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+    </button>
+    <button id="edit-btn" class="btn round primary" title="Edit" aria-label="Edit">
+      <svg class="icon-edit" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"/></svg>
+      <svg class="icon-done" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+    </button>
+  </div>
 
   <aside id="panel" hidden>
     <h2>Edit map</h2>
@@ -31,7 +39,6 @@
     <div id="panel-gradient" class="gradient-bar"></div>
 
     <div class="row">
-      <button id="copy-btn" class="btn">Copy link</button>
       <button id="clear-btn" class="btn danger">Clear all data</button>
     </div>
     <button id="reset-colors-btn" class="btn link">Reset colors</button>
@@ -62,6 +69,8 @@
     <div class="legend-scale"><span id="legend-min"></span><span id="legend-max"></span></div>
     <div class="legend-nodata"><i id="legend-nodata-swatch"></i>No data</div>
   </div>
+
+  <div id="overflow" hidden><ul id="overflow-list"></ul></div>
 
   <div id="toast" hidden></div>
 

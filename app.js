@@ -2,7 +2,7 @@
   'use strict';
 
   // ---------- State & URL ----------
-  const DEFAULTS = { u: '', a: 'ffffcc', b: 'bd0026', n: 'd3d3d3' };
+  const DEFAULTS = { u: '', a: 'e57373', b: '81c784', n: 'd3d3d3' };
   const HEX = /^[0-9a-f]{6}$/i;
 
   const MAX_ZOOM = 20;
@@ -77,7 +77,9 @@
   const root = svg.append('g');
   const sphereG = root.append('path').attr('class', 'sphere');
   const countriesG = root.append('g');
-  const labelsG = root.append('g');
+  // Labels live in screen coordinates (outside the zoomed group) so they can be
+  // placed inside the visible part of each country.
+  const labelsG = svg.append('g');
 
   const projection = d3.geoEqualEarth();
   const path = d3.geoPath(projection);
@@ -142,17 +144,26 @@
     svg.transition().duration(250).call(zoom.transform, d3.zoomIdentity);
   }
 
-  // Largest polygon of a (multi)polygon feature: used for label placement.
-  function mainPart(f) {
+  // Polygon parts of a (multi)polygon feature: used for label placement.
+  function partsOf(f) {
     const g = f.geometry;
-    if (g.type !== 'MultiPolygon') return f;
-    let best = null, bestArea = -1;
-    for (const coords of g.coordinates) {
-      const part = { type: 'Polygon', coordinates: coords };
-      const a = path.area(part);
-      if (a > bestArea) { bestArea = a; best = part; }
-    }
-    return best;
+    if (g.type !== 'MultiPolygon') return [g];
+    return g.coordinates.map(coords => ({ type: 'Polygon', coordinates: coords }));
+  }
+
+  // Projection in screen coordinates for the current zoom transform, clipped to
+  // the viewport, so areas/centroids describe only what is visible.
+  const screenProj = d3.geoEqualEarth();
+  const screenPath = d3.geoPath(screenProj);
+  function syncScreenProjection() {
+    const k = transform.k;
+    const [tx, ty] = projection.translate();
+    screenProj
+      .rotate(projection.rotate())
+      .center(projection.center())
+      .scale(projection.scale() * k)
+      .translate([tx * k + transform.x, ty * k + transform.y])
+      .clipExtent([[0, 0], [window.innerWidth, window.innerHeight]]);
   }
 
   function layout() {
@@ -161,12 +172,6 @@
     projection.fitExtent([[10, 10], [w - 10, h - 10]], { type: 'FeatureCollection', features });
     sphereG.attr('d', path({ type: 'Sphere' }));
     countriesG.selectAll('path').attr('d', path);
-    for (const f of features) {
-      const part = mainPart(f);
-      f._centroid = path.centroid(part);
-      const [[x0], [x1]] = path.bounds(part);
-      f._width = x1 - x0;
-    }
     zoom.extent([[0, 0], [w, h]]).translateExtent([[0, 0], [w, h]]);
     render();
     applyView();
@@ -187,8 +192,11 @@
     return lum > 0.55 ? '#111827' : '#ffffff';
   }
 
+  let fillOf = () => null; // key -> fill color, refreshed by render()
+
   function render() {
     const { min, max, fn } = colorScale();
+    fillOf = key => fn(state.data.get(key));
     const noData = '#' + state.n;
 
     countriesG.selectAll('path')
@@ -200,8 +208,8 @@
       .data(withData, f => f._key)
       .join('text')
       .attr('class', 'label')
-      .attr('x', f => f._centroid[0])
-      .attr('y', f => f._centroid[1])
+      .attr('font-size', LABEL_PX)
+      .attr('stroke-width', 2.5)
       .text(f => shortFmt(state.data.get(f._key)))
       .each(function (f) {
         const fill = fn(state.data.get(f._key));
@@ -225,16 +233,62 @@
     document.getElementById('legend-nodata-swatch').style.background = noData;
   }
 
+  const LABEL_PX = 11;
+  const overflow = document.getElementById('overflow');
+  const overflowList = document.getElementById('overflow-list');
+  let overflowSig = '';
+
+  // Places each label at the centroid of the largest visible part of its
+  // country; labels that don't fit go to the bottom strip instead.
   function updateLabels() {
-    const k = transform.k;
-    const fontPx = 11;
-    labelsG.selectAll('text')
-      .attr('font-size', fontPx / k)
-      .attr('stroke-width', 2.5 / k)
-      .attr('display', function (f) {
-        const textW = this.textContent.length * fontPx * 0.62;
-        return f._width * k >= textW ? null : 'none';
-      });
+    if (!features.length) return;
+    syncScreenProjection();
+    const misfits = [];
+    labelsG.selectAll('text').each(function (f) {
+      if (!f._parts) f._parts = partsOf(f);
+      let best = null, bestArea = 0;
+      for (const part of f._parts) {
+        const a = screenPath.area(part);
+        if (a > bestArea) { bestArea = a; best = part; }
+      }
+      const el = d3.select(this);
+      if (!best) { el.attr('display', 'none'); return; } // off-screen
+      const [[x0, y0], [x1, y1]] = screenPath.bounds(best);
+      const textW = this.textContent.length * LABEL_PX * 0.62;
+      if (x1 - x0 >= textW && y1 - y0 >= LABEL_PX + 3) {
+        const [cx, cy] = screenPath.centroid(best);
+        el.attr('display', null).attr('x', cx).attr('y', cy);
+      } else {
+        el.attr('display', 'none');
+        misfits.push(f);
+      }
+    });
+    updateOverflow(misfits);
+  }
+
+  function updateOverflow(misfits) {
+    misfits.sort((p, q) => state.data.get(q._key) - state.data.get(p._key));
+    const items = misfits.map(f => {
+      const v = state.data.get(f._key);
+      return { name: f.properties.name, fill: fillOf(f._key), text: fmt(v) };
+    });
+    const sig = items.map(i => i.name + '|' + i.fill + '|' + i.text).join(';');
+    if (sig === overflowSig) return;
+    overflowSig = sig;
+    overflowList.replaceChildren(...items.map(i => {
+      const li = document.createElement('li');
+      const sw = document.createElement('i');
+      sw.style.background = i.fill;
+      const name = document.createElement('span');
+      name.className = 'name';
+      name.textContent = i.name;
+      const val = document.createElement('b');
+      val.textContent = i.text;
+      li.append(sw, name, val);
+      return li;
+    }));
+    overflow.hidden = items.length === 0;
+    document.documentElement.style.setProperty('--strip-h', overflow.hidden ? '0px' : overflow.offsetHeight + 'px');
   }
 
   // ---------- Tooltip ----------
@@ -266,7 +320,8 @@
     editing = on;
     document.body.classList.toggle('editing', on);
     panel.hidden = !on;
-    editBtn.textContent = on ? 'Done' : 'Edit';
+    editBtn.title = on ? 'Done' : 'Edit';
+    editBtn.setAttribute('aria-label', editBtn.title);
     if (!on) closePopup();
     else syncPanel();
   }
@@ -299,7 +354,7 @@
     toast('All data cleared');
   });
 
-  document.getElementById('copy-btn').addEventListener('click', async () => {
+  document.getElementById('share-btn').addEventListener('click', async () => {
     const url = location.href;
     try {
       await navigator.clipboard.writeText(url);
@@ -420,7 +475,10 @@
     layout();
   });
 
-  window.addEventListener('resize', () => { if (features.length) layout(); });
+  window.addEventListener('resize', () => {
+    overflowSig = ''; // strip height may change with width
+    if (features.length) layout();
+  });
   window.addEventListener('hashchange', () => {
     parseHash();
     if (editing) syncPanel();
