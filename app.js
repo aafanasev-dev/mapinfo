@@ -60,6 +60,93 @@
     const h = buildHash();
     const url = location.pathname + location.search + (h ? '#' + h : '');
     history.replaceState(null, '', url);
+    scheduleShortLink();
+  }
+
+  // ---------- Short links ----------
+  // `#z=<base64url>` is the full hash (as in the address bar) compressed with
+  // deflate-raw. Share copies it when it is shorter than the full link; opening
+  // one expands it back to the full hash in the address bar. Shared short links
+  // depend on this format, so it must stay decodable.
+  const canZip = typeof CompressionStream === 'function';
+  const canUnzip = typeof DecompressionStream === 'function';
+  const MAX_UNZIPPED = 100000; // guards against links that expand to something huge
+
+  async function packHash(str) {
+    const stream = new Blob([str]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+    const bytes = new Uint8Array(await new Response(stream).arrayBuffer());
+    let bin = '';
+    for (const b of bytes) bin += String.fromCharCode(b);
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+
+  async function unpackHash(z) {
+    if (!/^[A-Za-z0-9_-]+$/.test(z)) throw new Error('invalid short link');
+    const b64 = z.replace(/-/g, '+').replace(/_/g, '/');
+    const bin = atob(b64 + '='.repeat((4 - b64.length % 4) % 4));
+    const bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
+    const reader = new Blob([bytes]).stream()
+      .pipeThrough(new DecompressionStream('deflate-raw'))
+      .pipeThrough(new TextDecoderStream())
+      .getReader();
+    let out = '';
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) return out;
+      out += value;
+      if (out.length > MAX_UNZIPPED) {
+        reader.cancel();
+        throw new Error('short link too large');
+      }
+    }
+  }
+
+  // If the address bar holds a short link, replace it with the full hash.
+  async function expandHash() {
+    const m = /^#z=([^&]*)$/.exec(location.hash);
+    if (!m) return;
+    let full = '';
+    if (!canUnzip) {
+      toast('This short link needs a newer browser');
+    } else {
+      try {
+        full = (await unpackHash(m[1])).replace(/^#/, '');
+        if (/(^|&)z=/.test(full)) full = ''; // never nest short links
+      } catch {
+        toast("Couldn't open short link");
+      }
+    }
+    history.replaceState(null, '', location.pathname + location.search + (full ? '#' + full : ''));
+  }
+
+  // Short link for the current hash, precomputed so Share can copy it
+  // synchronously (Safari refuses clipboard writes after an await).
+  let shortLink = { hash: null, url: null };
+  let shortTimer = null;
+
+  function currentShareUrls() {
+    const hash = location.hash.slice(1);
+    const full = location.href;
+    const short = shortLink.hash === hash ? shortLink.url : null;
+    return { hash, full, short };
+  }
+
+  async function computeShortLink() {
+    const hash = location.hash.slice(1);
+    let url = null;
+    if (canZip && hash) {
+      try {
+        const z = location.origin + location.pathname + location.search + '#z=' + await packHash(hash);
+        if (z.length < location.href.length) url = z;
+      } catch { /* fall back to the full link */ }
+    }
+    if (location.hash.slice(1) === hash) shortLink = { hash, url };
+    return url;
+  }
+
+  function scheduleShortLink() {
+    clearTimeout(shortTimer);
+    shortTimer = setTimeout(computeShortLink, 300);
   }
 
   // ---------- Formatting ----------
@@ -355,7 +442,9 @@
   });
 
   document.getElementById('share-btn').addEventListener('click', async () => {
-    const url = location.href;
+    let { hash, full, short } = currentShareUrls();
+    if (shortLink.hash !== hash) short = await computeShortLink(); // cache was stale
+    const url = short || full;
     try {
       await navigator.clipboard.writeText(url);
     } catch {
@@ -366,7 +455,7 @@
       document.execCommand('copy');
       ta.remove();
     }
-    toast('Link copied');
+    toast(short ? 'Short link copied' : 'Link copied');
   });
 
   // ---------- Value popup ----------
@@ -452,9 +541,12 @@
     toast._t = setTimeout(() => { t.hidden = true; }, 1500);
   }
 
-  parseHash();
+  const hashReady = expandHash().then(() => {
+    parseHash();
+    scheduleShortLink();
+  });
 
-  d3.json('vendor/countries-110m.json').then(topo => {
+  Promise.all([d3.json('vendor/countries-110m.json'), hashReady]).then(([topo]) => {
     features = topojson.feature(topo, topo.objects.countries).features
       .filter(f => f.properties.name !== 'Antarctica');
     for (const f of features) f._key = keyOf(f);
@@ -479,8 +571,10 @@
     overflowSig = ''; // strip height may change with width
     if (features.length) layout();
   });
-  window.addEventListener('hashchange', () => {
+  window.addEventListener('hashchange', async () => {
+    await expandHash();
     parseHash();
+    scheduleShortLink();
     if (editing) syncPanel();
     render();
     if (features.length) applyView();

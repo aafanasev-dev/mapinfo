@@ -51,7 +51,7 @@
   <h2 id="using">Using the map</h2>
   <h3>Buttons (top-left)</h3>
   <ul>
-    <li><strong>Share</strong> (three connected dots): copies the current map link to the clipboard.</li>
+    <li><strong>Share</strong> (three connected dots): copies the current map link to the clipboard. For larger maps it copies a compressed <em>short link</em> (<code>#z=…</code>) instead. Opening it shows the same map, and the address bar switches back to the full link.</li>
     <li><strong>Edit</strong> (pencil): opens the edit panel. While editing, the icon is a check mark; click it again to finish.</li>
     <li><strong>Help</strong> (question mark): opens this page.</li>
   </ul>
@@ -104,6 +104,10 @@
     <li>Pairs with a non-numeric value, colors that are not 6 hex digits and out-of-range views are ignored, as are unknown parameters. The map never fails to load because of a bad parameter.</li>
     <li>If a key appears twice in <code>d</code>, the last one wins.</li>
   </ul>
+
+  <h3 id="short-links">Short links (<code>#z=</code>)</h3>
+  <p>The Share button may produce links of the form <code>/#z=&lt;data&gt;</code>. <strong>When generating links, use the full parameter format above</strong>: it always works and is easy to read. Short links are an optional, smaller encoding of exactly the same thing. Where they help, they are about 30% shorter (only for maps with many countries).</p>
+  <p>How a short link is made: take the full hash string without the <code>#</code> (e.g. <code>u=%25&amp;d=250:72.5,724:68.1</code>), compress its UTF-8 bytes with raw DEFLATE (RFC 1951, no zlib or gzip header), and encode the result as base64url (<code>-</code> and <code>_</code>, no <code>=</code> padding). A <code>#z=</code> link must contain nothing but the <code>z</code> parameter. When the page opens one, it expands it and replaces the address bar with the full link.</p>
 
   <h3>Examples</h3>
   <p><strong>Population in millions</strong> for five countries, default colors:</p>
